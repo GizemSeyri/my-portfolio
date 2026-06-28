@@ -28,9 +28,17 @@ notDNSForbidden = true;
 try {
 	let urlToUse = urlString;
 	if (!urlToUse.startsWith("http://") && !urlToUse.startsWith("https://")) {
+		// Only prepend https:// for bare hostnames (no scheme at all).
+		// URLs with a non-http scheme (e.g. attachment:, file:) must be skipped.
+		if (/^[a-z][a-z0-9+\-.]*:/i.test(urlToUse)) {
+			throw new Error(`Unsupported URL scheme: ${urlToUse}`);
+		}
 		urlToUse = "https://" + urlToUse;
 	}
 	url = new URL(urlToUse);
+	if (url.protocol !== "http:" && url.protocol !== "https:") {
+		throw new Error(`Unsupported URL scheme: ${urlToUse}`);
+	}
 	// Remove ONLY text fragments for metascraper, preserving normal anchors
 	const urlForMetascraper = url.toString().replace(/#:~:text=.*$/, "");
 
@@ -48,7 +56,7 @@ try {
 
 <div class="bookmark no-rss" id={setId ? block.Id : undefined}>
 	{
-		url && notDNSForbidden ? (
+		url && (notDNSForbidden ? (
 			<div class="bookmark-link-container">
 				<a href={url.toString()} target="_blank" rel="noopener noreferrer" class="bookmark-card">
 					<div class="bookmark-text">
@@ -104,7 +112,7 @@ try {
 					</div>
 				</a>
 			</div>
-		)
+		))
 	}
 	<Caption richTexts={(block.Bookmark || block.LinkPreview || block.Embed).Caption} block={block} />
 </div>
